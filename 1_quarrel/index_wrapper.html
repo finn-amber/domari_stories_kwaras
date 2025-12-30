@@ -54,8 +54,8 @@
 		}
 		var clip = nTr.getAttribute('clip');
 
-		// force .mp3 instead of .wav
-		var mp3clip = clip.replace(/\.wav$/i, ".mp3");
+		// force .mp3 instead of .mp3
+		var mp3clip = clip.replace(/\.mp3$/i, ".mp3");
 
 		sOut += '<tr><td><audio controls preload="none" style="width:200px;">' +
         		'<source src="clips/' + mp3clip + '" type="audio/mpeg">' +
