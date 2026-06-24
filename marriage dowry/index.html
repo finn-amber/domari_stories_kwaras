@@ -1,0 +1,488 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en"><head>
+  
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Dowry Story</title>  <link rel="stylesheet" href="css/fm.css" type="text/css">
+  <link type="text/css" href="css/smoothness/jquery-ui-1.8.18.custom.css" rel="stylesheet">
+  <script type="text/javascript" src="js/jquery.js"></script>
+  <script type="text/javascript" src="js/jquery-ui-1.8.18.custom.min.js"></script>
+
+  
+  <style type="text/css" title="currentStyle">
+			@import "css/demo_page.css";
+			@import "css/demo_table_jui.css";
+			@import "css/smoothness/jquery-ui-1.8.18.custom.css";
+			@import "css/ColVis.css";
+			@import "css/TableTools_JUI.css";
+	</style>
+
+  <script type="text/javascript" src="js/jquery.js"></script>
+  <script type="text/javascript" src="js/jquery.dataTables.js"></script>
+  <script type="text/javascript" src="js/jquery.media.js"></script>
+  <script type="text/javascript" src="js/jquery.metadata.js"></script>
+  <script type="text/javascript" src="js/TableTools.min.js"></script>
+  <script type="text/javascript" src="js/ColVis.js"></script>
+
+   <script type="text/javascript" charset="utf-8">
+
+	/* helper for processing url parameters */
+	function getParam(name) {
+		name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+		var regexS = "[\\?&]" + name + "=([^&#]*)";
+		var regex = new RegExp(regexS);
+		var results = regex.exec(window.location.search);
+		if (results == null)
+			return "";
+		else
+			return decodeURIComponent(results[1].replace(/\+/g, " "));
+	};
+
+	/* status variables for column search */
+	var asInitVals = new Array();
+	var colHeads = new Array();
+
+
+	/* Formatting function for row details nested table */
+	function fnFormatDetails ( oTable, nTr ) {
+	    var aData = oTable.fnGetData( nTr );
+	    var sOut = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">';
+		for (idx = 0; idx < aData.length; ++idx) {
+			if ( colHeads[idx].className.indexOf("Annotation") >= 0 ) {
+	    		sOut += '<tr><td> </td><td>'+aData[idx]+'</td></tr>';
+			}
+		}
+		var clip = nTr.getAttribute('clip');
+		sOut += '<tr><td><a class="media" href="clips/' + clip + '"> </a> </td>';
+		sOut += '<td><a href="clips/' + clip + '">&lt; ';
+		for (idx = 0; idx < aData.length; ++idx) {
+			if ( colHeads[idx].className.indexOf("Citation") >= 0 ) {
+				sOut += aData[idx]+' ';
+			}
+		}
+		sOut += '&gt;</a> </td></tr>';
+	    sOut += '</table>';
+	     
+	    return sOut;
+	};
+
+	$(document).ready(function() {
+
+		/* permanent list of hidden and showing column heads */
+		colHeads = $('#clip_metadata thead th');
+		var iColumns = colHeads.length;
+
+		var oTable = $('#clip_metadata').dataTable({
+			"sDom": '<"H"fp<TC>r>t<"F"ilp>',
+			"bJQueryUI" : true,
+			"sPaginationType" : "full_numbers",
+			"oLanguage" : {
+				"sSearch" : "Search all columns:"
+			},
+			"oSearch" : {
+				"sSearch" : getParam("q")
+			},
+			"oColVis": {
+				"buttonText": "Columns"
+			},
+			"aoColumnDefs": [
+				{ "bVisible": false, "aTargets": [ "Hide" ] }
+    		],
+
+			"oTableTools": {
+          		"aButtons": [
+               	{
+                    "sExtends":    "collection",
+					  "sButtonText": "Duplicates",
+						"aButtons": [
+							{
+								"sExtends": "text",
+								"sButtonText": "Show",
+								"fnClick": function ( nButton, oConfig, oFlash ) {
+                        				oTable.fnFilter("",iColumns-1);
+                    			}
+							},
+							{
+								"sExtends": "text",
+								"sButtonText": "Hide",
+								"fnClick": function ( nButton, oConfig, oFlash ) {
+                        				oTable.fnFilter("-1", iColumns-1);
+                    			}								
+							}]
+                }
+			]
+		}
+		});
+
+		/* Default to hiding duplicates */
+		if (getParam("q") == '') {
+			oTable.fnFilter("-1", iColumns-1);
+		}
+
+    	$("tfoot input").keyup( function () {
+    	    /* Filter on the column (the index) of this element */
+    	    oTable.fnFilter( this.value, oTable._fnVisibleToColumnIndex( $("tfoot input").index(this) ), 1, 0 );
+    	} );
+     
+     
+     
+    /*
+     * Support functions to provide a little bit of 'user friendlyness' 
+     * to the textboxes in the footer
+     */
+    $("tfoot input").each( function (i) {
+        asInitVals[i] = this.value;
+    } );
+     
+    $("tfoot input").focus( function () {
+        if ( this.className == "search_init" )
+        {
+            this.className = "";
+            this.value = "";
+        }
+    } );
+     
+    $("tfoot input").blur( function (i) {
+        if ( this.value == "" )
+        {
+            this.className = "search_init";
+            this.value = asInitVals[$("tfoot input").index(this)];
+        }
+    } );
+
+		/* listen for clicks to open and close details, and play sound */
+		$('#clip_metadata > tbody > tr').live('click', function() {
+ 			var nTr = $(this)[0];
+			var aData = oTable.fnGetData( nTr );
+			if (aData == null) {
+				/* click is on nested table row */
+				nTr = nTr.previousSibling;
+			}
+	 		if ( oTable.fnIsOpen(nTr) ) {
+				/* This row is already open - close it */
+            	oTable.fnClose( nTr );
+        	}
+        	else {
+				/* Open this row */
+				oTable.fnOpen( nTr, fnFormatDetails(oTable, nTr), 'details' );
+			}
+
+			/* var clip = $(this).attr('clip'); */
+			/* $('#play').html('<a class="media" href="clips/' + clip + '">' + clip + '</a>'); */
+			$('a.media').media({
+				width : 100,
+				height : 20,
+				autoplay : true
+			});
+		});
+	});
+
+</script>
+</head>
+<body>
+<div align="right">
+                <a href="index.html">Corpus</a>
+                - <a href="dict.xhtml">Dictionary</a>
+                </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container">
+<table id="clip_metadata">
+                        <thead>
+                          <tr>
+                            <th class="Annotation">Matras_Jerusalem_Domari_2000&nbsp;</th>
+<th class="Annotation">Macalister_Domari_1914&nbsp;</th>
+<th class="Annotation">English&nbsp;</th>
+                            <th class="Citation">Speaker&nbsp;</th>
+                            <th class="Citation">Citation&nbsp;</th>
+                            <th>Length&nbsp;</th>'
+                            <th class="Hide">Start&nbsp;</th>
+<th class="Hide">Stop&nbsp;</th>
+<th class="Hide">WAV&nbsp;</th>
+<th class="Hide">EAF&nbsp;</th>
+<th class="Hide">File&nbsp;</th>
+<th class="Hide">Token&nbsp;</th>
+                          </tr>
+                        </thead><tfoot>
+                        <tr>
+                          <th><div><input type="text" value="Search Matras_Jerusalem_Domari_2000" class="search_init"></div></th>
+<th><div><input type="text" value="Search Macalister_Domari_1914" class="search_init"></div></th>
+<th><div><input type="text" value="Search English" class="search_init"></div></th>
+<th><div><input type="text" value="Search Speaker" class="search_init"></div></th>
+<th><div><input type="text" value="Search Citation" class="search_init"></div></th>
+<th><div><input type="text" value="Search Length" class="search_init"></div></th>
+<th><div><input type="text" value="Search Start" class="search_init"></div></th>
+<th><div><input type="text" value="Search Stop" class="search_init"></div></th>
+<th><div><input type="text" value="Search WAV" class="search_init"></div></th>
+<th><div><input type="text" value="Search EAF" class="search_init"></div></th>
+<th><div><input type="text" value="Search File" class="search_init"></div></th>
+<th><div><input type="text" value="Search Token" class="search_init"></div></th>
+                        </tr>
+                      </tfoot>
+                      <tbody><tr clip="audacity_marriage[00_227-00_247].mp3">
+<td>bāyos gara pašīs, ma lakadosis.</td>
+<td>Răsrṓsis bo͡iŭs, nī-mindṓsis,</td>
+<td>Her father followed him and did not catch him</td>
+<td></td>
+<td>audacity_marriage:00:22.7</td>
+<td>0:02.0</td>
+<td>0:22.7</td>
+<td>0:24.7</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_227-00_247].mp3" target="_blank">audacity_marriage[00_227-00_247].mp3</a></td>
+<td>57356856-1</td><tr clip="audacity_marriage[00_013-00_039].mp3">
+<td>… še ama bisāwakamis</td>
+<td>-</td>
+<td>(who I am marrying off)</td>
+<td></td>
+<td>audacity_marriage:00:01.3</td>
+<td>0:02.6</td>
+<td>0:01.3</td>
+<td>0:03.9</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_013-00_039].mp3" target="_blank">audacity_marriage[00_013-00_039].mp3</a></td>
+<td>79085901-1</td><tr clip="audacity_marriage[00_087-00_107].mp3">
+<td>Tirdēn mahros ʕašrīn līra.</td>
+<td>Tírdēn mínjī wī zerd. </td>
+<td>we paid twenty pounds. </td>
+<td></td>
+<td>audacity_marriage:00:08.7</td>
+<td>0:01.9</td>
+<td>0:08.7</td>
+<td>0:10.7</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_087-00_107].mp3" target="_blank">audacity_marriage[00_087-00_107].mp3</a></td>
+<td>01629166-1</td><tr clip="audacity_marriage[00_383-00_402].mp3">
+<td>laḥadda na manīra wala kiyakak.</td>
+<td>tă-'ád inheʔ kiyák.</td>
+<td>until nothing more was left.</td>
+<td></td>
+<td>audacity_marriage:00:38.3</td>
+<td>0:01.9</td>
+<td>0:38.3</td>
+<td>0:40.2</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_383-00_402].mp3" target="_blank">audacity_marriage[00_383-00_402].mp3</a></td>
+<td>12152559-1</td><tr clip="audacity_marriage[00_247-00_290].mp3">
+<td>čirdom bāyiske demsi ʕašrīn līra badāl barimki.</td>
+<td>ắmmă tírdōm wī zerd barōm-dḗriătă bo͡iúska</td>
+<td>but I offered twenty pounds in the place of my brother to her father, </td>
+<td></td>
+<td>audacity_marriage:00:24.7</td>
+<td>0:04.3</td>
+<td>0:24.7</td>
+<td>0:29.0</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_247-00_290].mp3" target="_blank">audacity_marriage[00_247-00_290].mp3</a></td>
+<td>00454402-1</td><tr clip="audacity_marriage[00_420-00_446].mp3">
+<td>mištirde siryis bāyiski ū mangida mēšis.</td>
+<td>Imcírdă má͡umŭs-siri u mámyisk ʕăstṓsis síriŭs, u wḗsre ŭnkī́săn panj u bá͡iŭs. </td>
+<td>he kissed his wife's head and remained with them (old Domari: he kissed his uncle's head and wife's mother's hand and remained with them)</td>
+<td></td>
+<td>audacity_marriage:00:42.0</td>
+<td>0:02.6</td>
+<td>0:42.0</td>
+<td>0:44.6</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_420-00_446].mp3" target="_blank">audacity_marriage[00_420-00_446].mp3</a></td>
+<td>43665115-1</td><tr clip="audacity_marriage[00_000-00_013].mp3">
+<td>barom ēra amake.</td>
+<td>Ắră barṓm ŭnkī́im.</td>
+<td>My brother came to me.</td>
+<td></td>
+<td>audacity_marriage:00:00.0</td>
+<td>0:01.3</td>
+<td>0:00.0</td>
+<td>0:01.3</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_000-00_013].mp3" target="_blank">audacity_marriage[00_000-00_013].mp3</a></td>
+<td>44683101-1</td><tr clip="audacity_marriage[00_059-00_078].mp3">
+<td>mangadēn mēšīs lāšya.</td>
+<td>mángărdēn mnēštis láciă. </td>
+<td>We asked the girl from him. </td>
+<td></td>
+<td>audacity_marriage:00:05.9</td>
+<td>0:01.9</td>
+<td>0:05.9</td>
+<td>0:07.8</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_059-00_078].mp3" target="_blank">audacity_marriage[00_059-00_078].mp3</a></td>
+<td>19674184-1</td><tr clip="audacity_marriage[00_039-00_059].mp3">
+<td>biddo bisāwahōšar māmis dīri.</td>
+<td>Mángări bēsa͡uí-kerămis má͡umŭs-dīri.</td>
+<td>He wants me to marry him to his uncle's daughter. </td>
+<td></td>
+<td>audacity_marriage:00:03.9</td>
+<td>0:02.0</td>
+<td>0:03.9</td>
+<td>0:05.9</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_039-00_059].mp3" target="_blank">audacity_marriage[00_039-00_059].mp3</a></td>
+<td>39974100-1</td><tr clip="audacity_marriage[00_078-00_087].mp3">
+<td>nanas plēran!</td>
+<td>(Círdă ăminkắră) "Nắnis ple."</td>
+<td>"bring the money" (he said)</td>
+<td></td>
+<td>audacity_marriage:00:07.8</td>
+<td>0:00.9</td>
+<td>0:07.8</td>
+<td>0:08.7</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_078-00_087].mp3" target="_blank">audacity_marriage[00_078-00_087].mp3</a></td>
+<td>34514017-1</td><tr clip="audacity_marriage[00_370-00_383].mp3">
+<td>bsuṭahredi kānu</td>
+<td>u ibsúṭre,</td>
+<td>and were satisfied,</td>
+<td></td>
+<td>audacity_marriage:00:37.0</td>
+<td>0:01.3</td>
+<td>0:37.0</td>
+<td>0:38.3</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_370-00_383].mp3" target="_blank">audacity_marriage[00_370-00_383].mp3</a></td>
+<td>18785371-1</td><tr clip="audacity_marriage[00_133-00_178].mp3">
+<td>mangara/ kān biddo mēšīman talātīn līra</td>
+<td>mángără mnḗšmăn tắrăn das zerd,</td>
+<td>he wanted from us thirty pounds</td>
+<td></td>
+<td>audacity_marriage:00:13.3</td>
+<td>0:04.6</td>
+<td>0:13.3</td>
+<td>0:17.8</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_133-00_178].mp3" target="_blank">audacity_marriage[00_133-00_178].mp3</a></td>
+<td>87913977-1</td><tr clip="audacity_marriage[00_194-00_227].mp3">
+<td>māmis putur pardosas ū nasra mindžīs [harab fīha]</td>
+<td>Părdṓsis má͡umŭs-pitr u násră minjī́. </td>
+<td>Her uncle's son took her and ran off with her.</td>
+<td></td>
+<td>audacity_marriage:00:19.4</td>
+<td>0:03.3</td>
+<td>0:19.4</td>
+<td>0:22.7</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_194-00_227].mp3" target="_blank">audacity_marriage[00_194-00_227].mp3</a></td>
+<td>39959473-1</td><tr clip="audacity_marriage[00_290-00_302].mp3">
+<td>nandēn di dbīḥa,</td>
+<td>nắndēn dī káli,</td>
+<td>and we bought two goats</td>
+<td></td>
+<td>audacity_marriage:00:29.0</td>
+<td>0:01.1</td>
+<td>0:29.0</td>
+<td>0:30.2</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_290-00_302].mp3" target="_blank">audacity_marriage[00_290-00_302].mp3</a></td>
+<td>17376131-1</td><tr clip="audacity_marriage[00_333-00_370].mp3">
+<td>bāyos ū barēs ū ʕealtos qēre.</td>
+<td>u ḳắră bó͡iŭs i dà͡iŭs u bárŭs</td>
+<td>and her father and mother and brother ate</td>
+<td></td>
+<td>audacity_marriage:00:33.3</td>
+<td>0:03.7</td>
+<td>0:33.3</td>
+<td>0:37.0</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_333-00_370].mp3" target="_blank">audacity_marriage[00_333-00_370].mp3</a></td>
+<td>38573459-1</td><tr clip="audacity_marriage[00_302-00_312].mp3">
+<td>mardēnsan.</td>
+<td>u mărdḗnsăn</td>
+<td>and slaughtered them,</td>
+<td></td>
+<td>audacity_marriage:00:30.2</td>
+<td>0:01.0</td>
+<td>0:30.2</td>
+<td>0:31.2</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_302-00_312].mp3" target="_blank">audacity_marriage[00_302-00_312].mp3</a></td>
+<td>17132896-1</td><tr clip="audacity_marriage[00_178-00_194].mp3">
+<td>nhe’ wāšīman kān ple.</td>
+<td>ắmmă inheʔ wăšī́măn ple.  </td>
+<td>but we didn't have the money</td>
+<td></td>
+<td>audacity_marriage:00:17.8</td>
+<td>0:01.5</td>
+<td>0:17.8</td>
+<td>0:19.4</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_178-00_194].mp3" target="_blank">audacity_marriage[00_178-00_194].mp3</a></td>
+<td>11720372-1</td><tr clip="audacity_marriage[00_312-00_333].mp3">
+<td>nandēn sałi ū masik.</td>
+<td>năndḗnsăn sal u ḳēš</td>
+<td>and set rice and meat,</td>
+<td></td>
+<td>audacity_marriage:00:31.2</td>
+<td>0:02.2</td>
+<td>0:31.2</td>
+<td>0:33.3</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_312-00_333].mp3" target="_blank">audacity_marriage[00_312-00_333].mp3</a></td>
+<td>07353985-1</td><tr clip="audacity_marriage[00_107-00_133].mp3">
+<td>bāyos mā kāniš biddo dersa</td>
+<td>Nīrdáḥră bó͡iōs indḗris</td>
+<td>He did not wish to give her. </td>
+<td></td>
+<td>audacity_marriage:00:10.7</td>
+<td>0:02.6</td>
+<td>0:10.7</td>
+<td>0:13.3</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_107-00_133].mp3" target="_blank">audacity_marriage[00_107-00_133].mp3</a></td>
+<td>78080068-1</td><tr clip="audacity_marriage[00_402-00_420].mp3">
+<td>šōni ū māmis putur garīre.</td>
+<td>Mī́ndă ḥálos láci u zárō ílli pădṓsis, gārī́re. </td>
+<td>The girl and the boy who took her (betook themselves and) returned. </td>
+<td></td>
+<td>audacity_marriage:00:40.2</td>
+<td>0:01.8</td>
+<td>0:40.2</td>
+<td>0:42.0</td>
+<td>audacity_marriage.mp3</td>
+<td>marriage_ELAN.eaf</td>
+<td> <a href="clips/audacity_marriage[00_402-00_420].mp3" target="_blank">audacity_marriage[00_402-00_420].mp3</a></td>
+<td>35300822-1</td></tbody>
+</table>
+
+<!-- table of metadata goes here -->
+
+</div>
+
+</body></html>
