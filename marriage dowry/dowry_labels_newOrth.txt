@@ -1,0 +1,60 @@
+0.000000	1.315747	barom ēra amake.
+1.315747	3.902747	… še ama bisāwakamis
+3.902747	5.944747	biddo bisāwahōšar māmis dīri.
+5.944747	7.829747	mangadēn mēšīs lāšya.
+7.829747	8.744747	nanas plēran!
+8.744747	10.651747	Tirdēn mahros ʕašrīn līra.
+10.651747	13.260747	bāyos mā kāniš biddo dersa
+13.260747	17.821747	mangara/ kān biddo mēšīman talātīn līra
+17.821747	19.355747	nhe’ wāšīman kān ple.
+19.355747	22.682747	māmis putur pardosas ū nasra mindžīs [harab fīha]
+22.682747	24.717747	bāyos gara pašīs, ma lakadosis.
+24.717747	29.038747	čirdom bāyiske demsi ʕašrīn līra badāl barimki.
+29.038747	30.167747	nandēn di dbīḥa,
+30.167747	31.176747	mardēnsan.
+31.176747	33.347747	nandēn sałi ū masik.
+33.347747	37.003747	bāyos ū barēs ū ʕealtos qēre.
+37.003747	38.347747	bsuṭahredi kānu
+38.347747	40.207747	laḥadda na manīra wala kiyakak.
+40.207747	41.969747	šōni ū māmis putur garīre.
+41.969747	44.583747	mištirde siryis bāyiski ū mangida mēšis.
+0.000000	1.315747	Ắră barṓm ŭnkī́im.
+1.315747	3.902747	-
+3.902747	5.944747	Mángări bēsa͡uí-kerămis má͡umŭs-dīri.
+5.944747	7.829747	mángărdēn mnēštis láciă. 
+7.829747	8.744747	(Círdă ăminkắră) "Nắnis ple."
+8.744747	10.651747	Tírdēn mínjī wī zerd. 
+10.651747	13.260747	Nīrdáḥră bó͡iōs indḗris
+13.260747	17.821747	mángără mnḗšmăn tắrăn das zerd,
+17.821747	19.355747	ắmmă inheʔ wăšī́măn ple.  
+19.355747	22.682747	Părdṓsis má͡umŭs-pitr u násră minjī́. 
+22.682747	24.717747	Răsrṓsis bo͡iŭs, nī-mindṓsis,
+24.717747	29.038747	ắmmă tírdōm wī zerd barōm-dḗriătă bo͡iúska
+29.038747	30.167747	nắndēn dī káli,
+30.167747	31.176747	u mărdḗnsăn
+31.176747	33.347747	năndḗnsăn sal u ḳēš
+33.347747	37.003747	u ḳắră bó͡iŭs i dà͡iŭs u bárŭs
+37.003747	38.347747	u ibsúṭre,
+38.347747	40.207747	tă-'ád inheʔ kiyák.
+40.207747	41.969747	Mī́ndă ḥálos láci u zárō ílli pădṓsis, gārī́re. 
+41.969747	44.583747	Imcírdă má͡umŭs-siri u mámyisk ʕăstṓsis síriŭs, u wḗsre ŭnkī́săn panj u bá͡iŭs. 
+0.000000	1.316000	My brother came to me.
+1.316000	3.903000	(who I am marrying off)
+3.903000	5.944747	He wants me to marry him to his uncle's daughter. 
+5.945000	7.830000	We asked the girl from him. 
+7.830000	8.745000	"bring the money" (he said)
+8.745000	10.652000	we pid twenty pounds. 
+10.652000	13.261000	He did not wish to give her. 
+13.261000	17.822000	he wanted from us thirty pounds
+17.822000	19.356000	but we didn't have the money
+19.356000	22.683000	Her uncle's son took her and ran off with her.
+22.683000	24.718000	Her father followed him anddid not catch him
+24.718000	29.039000	but I offered twenty pounds in the place of my brother to her father, 
+29.039000	30.168000	and we bought two goats
+30.168000	31.177000	and slaughtered them,
+31.177000	33.348000	and set rice and meat,
+33.348000	37.004000	and her father and mother and brother ate
+37.004000	38.348000	and were satisfied,
+38.348000	40.208000	until nothing more was left.
+40.208000	41.970000	The girl and the boy who took her (betook themselves and) returned. 
+41.970000	44.584000	he kissed his wife's head and remained with them (old Domari: he kissed his uncle's head and wife's mother's hand and remained with them)
