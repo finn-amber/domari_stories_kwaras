@@ -1,0 +1,315 @@
+import xml.etree.ElementTree as ET
+import os
+from pathlib import Path
+
+def generate_master_html(data_folder, output_html, column_config):
+    # Setup for columns
+    target_tiers = [tier for col in column_config for tier in col]
+    num_columns = len(column_config)
+    
+    # Base HTML Template
+    html_template = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Domari Master Corpus</title>
+        <style>
+            :root {
+                /* DARK MODE (DEFAULT) */
+                --bg-page: #1f2225;
+                --bg-surface: #2b2f34;
+                --text-main: #eef2f3;
+                --text-muted: #a3b1b2;
+                --border-color: #3a3f45;
+                --row-hover: #24282c;
+                --accent-red: #d32f2f;
+                --accent-hover: #b71c1c;
+                --highlight-bg: rgba(211, 47, 47, 0.15);
+                --highlight-border: #ff5252;
+                --input-bg: #1f2225;
+            }
+
+            @media (prefers-color-scheme: light) {
+                :root {
+                    /* LIGHT MODE */
+                    --bg-page: #f3f8f9;
+                    --bg-surface: #ffffff;
+                    --text-main: #111111;
+                    --text-muted: #555555;
+                    --border-color: #d1d9da;
+                    --row-hover: #e9ecef;
+                    --accent-red: #c62828; 
+                    --accent-hover: #b71c1c;
+                    --highlight-bg: #ffebeb;
+                    --highlight-border: #d32f2f;
+                    --input-bg: #ffffff;
+                }
+            }
+
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 0 1rem 2rem 1rem; background-color: var(--bg-page); color: var(--text-main); line-height: 1.6; transition: background-color 0.3s, color 0.3s; }
+            h1 { text-align: center; margin-top: 2rem; color: var(--text-main); }
+            
+            /* Sticky Header */
+            .sticky-header { position: sticky; top: 0; background: var(--bg-page); padding: 1rem 0 0.5rem 0; border-bottom: 2px solid var(--border-color); z-index: 100; }
+            audio { width: 100%; border-radius: 8px; margin-bottom: 1rem; }
+            
+            /* Dynamic Grid Setup */
+            .grid-layout { display: flex; gap: 1.5rem; align-items: flex-start; }
+            .left-spacer { flex-shrink: 0; width: 140px; } 
+            .content-grid { flex: 1; display: grid; grid-template-columns: repeat([NUM_COLUMNS], 1fr); gap: 2rem; }
+            
+            /* Live Search */
+            .search-container { margin-bottom: 1rem; }
+            input.column-search { width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--input-bg); color: var(--text-main); font-size: 0.95rem; box-sizing: border-box; transition: border-color 0.2s; }
+            input.column-search:focus { outline: none; border-color: var(--accent-red); box-shadow: 0 0 0 2px var(--highlight-bg); }
+            input.column-search::placeholder { color: var(--text-muted); }
+
+            /* Transcript Rows */
+            .transcript-container { margin-top: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-surface); overflow: hidden; }
+            .transcript-row { display: flex; align-items: flex-start; padding: 1.5rem; border-bottom: 1px solid var(--border-color); transition: background 0.2s ease; gap: 1.5rem; }
+            .transcript-row:last-child { border-bottom: none; }
+            .transcript-row:hover { background-color: var(--row-hover); }
+            
+            .row-controls { flex-shrink: 0; width: 140px; display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch; }
+            .play-btn { background: var(--accent-red); color: white; border: none; border-radius: 6px; padding: 0.6rem; cursor: pointer; font-weight: 600; transition: background 0.2s; width: 100%; }
+            .play-btn:hover { background: var(--accent-hover); }
+            
+            .metadata-label { font-size: 0.75rem; color: var(--text-muted); text-align: center; line-height: 1.2; word-wrap: break-word; }
+            .story-title { font-weight: bold; color: var(--accent-red); margin-bottom: 0.2rem; }
+            .time-label { font-family: monospace; background: var(--bg-page); border: 1px solid var(--border-color); padding: 0.2rem; border-radius: 4px; }
+            
+            .transcript-column { display: flex; flex-direction: column; gap: 1rem; }
+            .tier-block { display: flex; flex-direction: column; }
+            .tier-name { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; margin-bottom: 0.2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.2rem; }
+            .tier-text { font-size: 1.15rem; color: var(--text-main); }
+            
+            .highlight { background-color: var(--highlight-bg) !important; border-left: 4px solid var(--highlight-border); padding-left: calc(1.5rem - 4px); }
+            
+            @media (max-width: 768px) {
+                .grid-layout { flex-direction: column; gap: 1rem; }
+                .left-spacer { display: none; }
+                .transcript-row { flex-direction: column; }
+                .row-controls { width: 100%; flex-direction: row; align-items: center; justify-content: flex-start; flex-wrap: wrap; }
+                .play-btn { width: auto; padding: 0.6rem 2rem; }
+                .content-grid { grid-template-columns: 1fr; gap: 1rem; }
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Domari Master Corpus</h1>
+        
+        <div class="sticky-header">
+            <!-- Audio source starts empty; JavaScript populates it on the first click -->
+            <audio id="main-audio" controls>
+                Your browser does not support the audio element.
+            </audio>
+            
+            <div class="search-container grid-layout">
+                <div class="left-spacer"></div>
+                <div class="content-grid">
+                    [SEARCH_BARS]
+                </div>
+            </div>
+        </div>
+
+        <div class="transcript-container">
+            [ROWS_HTML]
+        </div>
+
+        <script>
+            const audio = document.getElementById('main-audio');
+            let stopTime = null;
+            let currentLoadedAudio = "";
+
+            // Dynamic Audio Playback Logic
+            function playSegment(start, end, rowId, wavFilename) {
+                // Remove highlights
+                document.querySelectorAll('.transcript-row').forEach(row => row.classList.remove('highlight'));
+                const activeRow = document.getElementById(rowId);
+                if (activeRow) activeRow.classList.add('highlight');
+
+                // Check if we need to load a new audio file
+                if (currentLoadedAudio !== wavFilename) {
+                    audio.src = wavFilename;
+                    audio.load();
+                    currentLoadedAudio = wavFilename;
+                }
+
+                // Play from start to end
+                audio.currentTime = start;
+                stopTime = end;
+                audio.play();
+            }
+
+            audio.addEventListener('timeupdate', () => {
+                if (stopTime && audio.currentTime >= stopTime) {
+                    audio.pause();
+                    stopTime = null;
+                }
+            });
+
+            // Live Search Logic (searches across all loaded stories)
+            const searchInputs = document.querySelectorAll('.column-search');
+            const rows = document.querySelectorAll('.transcript-row');
+
+            searchInputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    const queries = Array.from(searchInputs).map(i => i.value.toLowerCase().trim());
+                    
+                    rows.forEach(row => {
+                        const columns = row.querySelectorAll('.transcript-column');
+                        let isMatch = true;
+                        
+                        queries.forEach((query, index) => {
+                            if (query && columns[index]) {
+                                const text = columns[index].textContent.toLowerCase();
+                                if (!text.includes(query)) {
+                                    isMatch = false;
+                                }
+                            }
+                        });
+                        
+                        row.style.display = isMatch ? 'flex' : 'none';
+                    });
+                });
+            });
+        </script>
+    </body>
+    </html>
+    """
+
+    # Generate Search Bars
+    search_bars_html = ""
+    for i, column in enumerate(column_config):
+        placeholder_name = column[0].replace('_', ' ')
+        search_bars_html += f'<input type="text" class="column-search" placeholder="Search {placeholder_name}..." aria-label="Search column {i+1}">'
+
+    # Iterate through ALL .eaf files in the directory
+    all_rows_html = ""
+    folder_path = Path(data_folder)
+    
+    # Find all .eaf files in the folder
+    eaf_files = list(folder_path.glob("*.eaf"))
+    
+    if not eaf_files:
+        print(f"No .eaf files found in {data_folder}")
+        return
+
+    print(f"Found {len(eaf_files)} ELAN files. Building master corpus...")
+
+    for eaf_file in eaf_files:
+        file_stem = eaf_file.stem
+        wav_file = eaf_file.with_suffix('.wav')
+        
+        # Make sure the accompanying WAV file exists
+        if not wav_file.exists():
+            print(f"Skipping {eaf_file.name}: Could not find matching audio file {wav_file.name}")
+            continue
+
+        display_title = file_stem.replace('_', ' ')
+
+        # Parse ELAN
+        try:
+            tree = ET.parse(eaf_file)
+            root = tree.getroot()
+        except Exception as e:
+            print(f"Error reading {eaf_file.name}: {e}")
+            continue
+
+        # Map Time Slots
+        time_slots = {}
+        for ts in root.find('TIME_ORDER').findall('TIME_SLOT'):
+            ts_id = ts.get('TIME_SLOT_ID')
+            time_val = ts.get('TIME_VALUE')
+            if time_val is not None:
+                time_slots[ts_id] = int(time_val)
+
+        # Extract Annotations
+        segments = {}
+        for tier in root.findall('TIER'):
+            tier_id = tier.get('TIER_ID')
+            if tier_id in target_tiers:
+                for ann in tier.findall('ANNOTATION/ALIGNABLE_ANNOTATION'):
+                    ts1 = ann.get('TIME_SLOT_REF1')
+                    ts2 = ann.get('TIME_SLOT_REF2')
+                    value_elem = ann.find('ANNOTATION_VALUE')
+                    text_value = value_elem.text if value_elem is not None and value_elem.text else ""
+
+                    start_ms = time_slots.get(ts1, 0)
+                    end_ms = time_slots.get(ts2, 0)
+                    start_sec = start_ms / 1000.0
+                    end_sec = end_ms / 1000.0
+                    
+                    time_key = (start_sec, end_sec)
+                    if time_key not in segments:
+                        segments[time_key] = {t: "" for t in target_tiers}
+                    segments[time_key][tier_id] = text_value
+
+        sorted_segments = sorted(segments.items(), key=lambda x: x[0][0])
+        
+        # Build HTML Rows for this specific file
+        for i, ((start_sec, end_sec), tier_data) in enumerate(sorted_segments):
+            # Make sure row IDs are unique across all files
+            row_id = f"{file_stem}_row_{i}"
+            
+            columns_html = ""
+            for column in column_config:
+                column_content = ""
+                for tier_name in column:
+                    text = tier_data.get(tier_name, "")
+                    display_name = tier_name.replace('_', ' ')
+                    
+                    column_content += f"""
+                    <div class="tier-block">
+                        <div class="tier-name">{display_name}</div>
+                        <div class="tier-text">{text if text else "<em>(blank)</em>"}</div>
+                    </div>
+                    """
+                columns_html += f'<div class="transcript-column">{column_content}</div>'
+
+            # Notice the playSegment function now passes wav_file.name
+            all_rows_html += f"""
+            <div class="transcript-row" id="{row_id}">
+                <div class="row-controls">
+                    <button class="play-btn" onclick="playSegment({start_sec}, {end_sec}, '{row_id}', '{wav_file.name}')">▶ Play</button>
+                    <div class="metadata-label">
+                        <div class="story-title">{display_title}</div>
+                        <div class="time-label">{start_sec:.2f}s - {end_sec:.2f}s</div>
+                    </div>
+                </div>
+                <div class="content-grid">
+                    {columns_html}
+                </div>
+            </div>
+            """
+
+    # Finalize and save
+    final_html = html_template.replace('[NUM_COLUMNS]', str(num_columns))
+    final_html = final_html.replace('[SEARCH_BARS]', search_bars_html)
+    final_html = final_html.replace('[ROWS_HTML]', all_rows_html)
+
+    with open(output_html, 'w', encoding='utf-8') as f:
+        f.write(final_html)
+    
+    print(f"Success! Master Corpus generated at {output_html}")
+
+if __name__ == '__main__':
+    # 1. Point this to the FOLDER where all your .eaf and .wav files live
+    DATA_FOLDER = Path(r"C:/Users/finna/OneDrive - Yale University/Documents/Domari/Experimental script")
+    
+    # 2. Point this to where you want the final master index.html file to be saved
+    OUTPUT_FILENAME = Path(r"C:/Users/finna/OneDrive - Yale University/Documents/Domari/Experimental script/master_corpus.html")
+    
+    # 3. Configure your columns 
+    COLUMN_CONFIG = [
+        ["Matras_Jerusalem_Domari_2000"],
+        ["Macalister_Domari_1914"],
+        ["English"]
+    ]
+
+    if DATA_FOLDER.exists() and DATA_FOLDER.is_dir():
+        generate_master_html(DATA_FOLDER, OUTPUT_FILENAME, COLUMN_CONFIG)
+    else:
+        print(f"Could not find the folder: {DATA_FOLDER}. Please ensure the path is correct.")
